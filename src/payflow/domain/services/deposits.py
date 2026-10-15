@@ -88,6 +88,33 @@ class DepositService:
         )
         return transaction
 
+    async def credit_settled(
+        self,
+        user_id: UUID,
+        currency: Currency,
+        amount: Decimal,
+        *,
+        external_id: str,
+    ) -> Transaction:
+        """Book money that was already collected outside the provider flow."""
+        wallet = await self._accounts.get_wallet(user_id, currency)
+        if wallet is None:
+            raise AccountNotFoundError
+        transaction = Transaction(
+            id=uuid7(),
+            type=TransactionType.DEPOSIT,
+            status=TransactionStatus.PENDING,
+            initiator_id=user_id,
+            destination_account_id=wallet.id,
+            amount=amount,
+            currency=currency,
+            external_id=external_id,
+        )
+        self._transactions.add(transaction)
+        await self._session.flush()
+        await self._settle(transaction)
+        return transaction
+
     async def apply_payment_event(self, event: PaymentEvent) -> None:
         """Apply a provider webhook; repeated or late deliveries change nothing."""
         if not await self._webhooks.record(

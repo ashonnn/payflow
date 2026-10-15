@@ -75,6 +75,35 @@ class InsufficientFundsError(ConflictError):
     default_message = "insufficient funds"
 
 
+class RecipientNotFoundError(NotFoundError):
+    code = "recipient_not_found"
+    default_message = "no active user with this phone number"
+
+
+class SelfTransferError(BusinessRuleError):
+    code = "self_transfer"
+    default_message = "cannot transfer to yourself"
+
+
+class TransactionNotReviewableError(ConflictError):
+    code = "not_reviewable"
+    default_message = "only transfers waiting for review can be approved or rejected"
+
+
+class AdminRequiredError(PermissionDeniedError):
+    code = "admin_required"
+    default_message = "this action requires an administrator"
+
+
+class RateLimitExceededError(DomainError):
+    code = "rate_limited"
+    default_message = "too many requests, retry later"
+
+    def __init__(self, retry_after_seconds: int) -> None:
+        super().__init__()
+        self.retry_after_seconds = retry_after_seconds
+
+
 class IdempotencyKeyRequiredError(BadRequestError):
     code = "idempotency_key_required"
     default_message = "this endpoint requires an Idempotency-Key header"

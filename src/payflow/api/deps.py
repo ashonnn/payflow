@@ -9,11 +9,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from payflow.container import Container
 from payflow.core.security import RefreshTokenStore
 from payflow.db.models import User
-from payflow.domain.exceptions import InvalidTokenError
+from payflow.domain.exceptions import (
+    AdminRequiredError,
+    InvalidTokenError,
+    RateLimitExceededError,
+)
 from payflow.domain.services.accounts import AccountService
 from payflow.domain.services.auth import AuthService
 from payflow.domain.services.deposits import DepositService
 from payflow.domain.services.history import HistoryService
+from payflow.domain.services.reviews import ReviewService
+from payflow.domain.services.transfers import TransferService
 
 
 def get_container(request: Request) -> Container:
@@ -80,3 +86,34 @@ def get_history_service(session: SessionDep) -> HistoryService:
 
 
 HistoryServiceDep = Annotated[HistoryService, Depends(get_history_service)]
+
+
+def get_transfer_service(
+    session: SessionDep, container: ContainerDep
+) -> TransferService:
+    return TransferService(session, container.fraud_policy, container.clock)
+
+
+TransferServiceDep = Annotated[TransferService, Depends(get_transfer_service)]
+
+
+def get_review_service(session: SessionDep, container: ContainerDep) -> ReviewService:
+    return ReviewService(session, container.clock)
+
+
+ReviewServiceDep = Annotated[ReviewService, Depends(get_review_service)]
+
+
+def get_admin_user(user: CurrentUser) -> User:
+    if not user.is_admin:
+        raise AdminRequiredError
+    return user
+
+
+AdminUser = Annotated[User, Depends(get_admin_user)]
+
+
+async def limit_transfer_rate(user: CurrentUser, container: ContainerDep) -> None:
+    decision = await container.transfer_rate_limiter.hit(str(user.id))
+    if not decision.allowed:
+        raise RateLimitExceededError(decision.retry_after_seconds)

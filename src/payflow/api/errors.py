@@ -14,6 +14,7 @@ from payflow.domain.exceptions import (
     DomainError,
     NotFoundError,
     PermissionDeniedError,
+    RateLimitExceededError,
     ServiceUnavailableError,
 )
 
@@ -24,6 +25,7 @@ STATUS_BY_ERROR: dict[type[DomainError], int] = {
     BusinessRuleError: status.HTTP_422_UNPROCESSABLE_CONTENT,
     AuthenticationError: status.HTTP_401_UNAUTHORIZED,
     PermissionDeniedError: status.HTTP_403_FORBIDDEN,
+    RateLimitExceededError: status.HTTP_429_TOO_MANY_REQUESTS,
     ServiceUnavailableError: status.HTTP_503_SERVICE_UNAVAILABLE,
 }
 
@@ -49,6 +51,8 @@ async def handle_domain_error(_: Request, exc: DomainError) -> JSONResponse:
     match exc:
         case AuthenticationError():
             headers["WWW-Authenticate"] = "Bearer"
+        case RateLimitExceededError(retry_after_seconds=seconds):
+            headers["Retry-After"] = str(seconds)
     return JSONResponse(
         error_body(exc.code, exc.message), status_code=status_for(exc), headers=headers
     )

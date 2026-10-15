@@ -7,8 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from payflow.core.clock import Clock, utc_now
 from payflow.core.config import Settings
+from payflow.core.rate_limit import SlidingWindowRateLimiter
 from payflow.core.security import PasswordHasher, TokenCodec
 from payflow.db.session import build_engine, build_session_factory
+from payflow.domain.fraud import FraudPolicy
 from payflow.domain.ports import PaymentProvider
 from payflow.integrations.payment_provider import HttpPaymentProvider, WebhookVerifier
 
@@ -24,6 +26,8 @@ class Container:
     token_codec: TokenCodec
     payment_provider: PaymentProvider
     webhook_verifier: WebhookVerifier
+    fraud_policy: FraudPolicy
+    transfer_rate_limiter: SlidingWindowRateLimiter
     clock: Clock
 
     async def aclose(self) -> None:
@@ -36,6 +40,7 @@ def build_container(
     settings: Settings, *, http_transport: httpx.AsyncBaseTransport | None = None
 ) -> Container:
     engine = build_engine(settings)
+    redis = Redis.from_url(settings.redis_url, decode_responses=True)
     provider_client = httpx.AsyncClient(
         base_url=settings.payment_provider_url,
         timeout=settings.payment_provider_timeout_seconds,
@@ -45,7 +50,7 @@ def build_container(
         settings=settings,
         engine=engine,
         session_factory=build_session_factory(engine),
-        redis=Redis.from_url(settings.redis_url, decode_responses=True),
+        redis=redis,
         http_client=provider_client,
         password_hasher=PasswordHasher(
             time_cost=settings.password_hash_time_cost,
@@ -62,6 +67,13 @@ def build_container(
             settings.payment_provider_webhook_secret.get_secret_value(),
             timedelta(seconds=settings.webhook_tolerance_seconds),
             utc_now,
+        ),
+        fraud_policy=FraudPolicy.from_settings(settings.fraud),
+        transfer_rate_limiter=SlidingWindowRateLimiter(
+            redis,
+            name="transfers",
+            limit=settings.transfer_rate_limit,
+            window=timedelta(seconds=settings.transfer_rate_window_seconds),
         ),
         clock=utc_now,
     )

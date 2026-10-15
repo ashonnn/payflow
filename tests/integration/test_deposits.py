@@ -4,20 +4,18 @@ from uuid import UUID
 import pytest
 from httpx import AsyncClient
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from payflow.db.models import LedgerEntry, OutboxEvent, Transaction
 from payflow.domain.enums import EventType, TransactionStatus
 from tests.integration.fakes import FakePaymentProvider
 from tests.integration.helpers import (
     ApiUser,
+    Sessions,
     payment_event,
     send_webhook,
     sign_up,
     start_deposit,
 )
-
-Sessions = async_sessionmaker[AsyncSession]
 
 
 @pytest.fixture

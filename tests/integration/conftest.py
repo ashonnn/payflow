@@ -22,6 +22,7 @@ from payflow.db.base import Base
 from payflow.db.session import build_engine, build_session_factory
 from payflow.main import create_app
 from tests.integration.fakes import FakePaymentProvider
+from tests.integration.helpers import DAYTIME
 
 ALEMBIC_INI = Path(__file__).resolve().parents[2] / "alembic.ini"
 
@@ -105,7 +106,9 @@ async def clean_state(engine: AsyncEngine, redis: Redis) -> None:
 
 @pytest.fixture
 async def app(settings: Settings, engine: AsyncEngine) -> AsyncIterator[FastAPI]:
-    app = create_app(build_container(settings))
+    container = build_container(settings)
+    container.clock = lambda: DAYTIME
+    app = create_app(container)
     async with LifespanManager(app):
         yield app
 
