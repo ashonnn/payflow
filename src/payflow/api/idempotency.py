@@ -21,11 +21,9 @@ REPLAYED_HEADER = "Idempotent-Replayed"
 
 
 class Idempotency:
-    """Runs a write once per key and replays its stored response on retries.
+    """Runs a write once per key; retries get the stored response back.
 
-    The key row and the operation's writes commit in the same transaction, so a
-    stored response always corresponds to effects that actually happened.
-    """
+    The key and the write's effects commit in the same transaction."""
 
     def __init__(
         self, request: Request, session: AsyncSession, user_id: UUID, key: str

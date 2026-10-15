@@ -18,9 +18,7 @@ class IdempotencyRepository:
     ) -> IdempotencyKey | None:
         """Reserve the key, or return the earlier request that already used it.
 
-        A concurrent request with the same key blocks here on the primary key
-        until the first one commits or rolls back.
-        """
+        A duplicate in flight makes this wait until the first request finishes."""
         claimed = await self._session.scalars(
             insert(IdempotencyKey)
             .values(user_id=user_id, key=key, request_fingerprint=fingerprint)
