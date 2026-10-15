@@ -50,13 +50,15 @@ class AccountRepository:
         return (await self._session.scalars(lookup)).one()
 
     async def lock(self, account_ids: Collection[UUID]) -> Sequence[Account]:
-        # one statement with ORDER BY takes row locks in id order, so two postings
-        # over the same accounts always queue instead of deadlocking
+        # rows are locked in id order so postings over the same accounts queue
+        # instead of deadlocking. NO KEY UPDATE is enough to change balances and,
+        # unlike FOR UPDATE, does not conflict with the KEY SHARE locks taken by
+        # foreign key checks when rows referencing these accounts are inserted
         statement = (
             select(Account)
             .where(Account.id.in_(account_ids))
             .order_by(Account.id)
-            .with_for_update()
+            .with_for_update(key_share=True)
             .execution_options(populate_existing=True)
         )
         result = await self._session.scalars(statement)

@@ -44,7 +44,7 @@ class TransactionRepository:
             select(Transaction)
             .options(*WITH_PARTIES)
             .where(Transaction.id == transaction_id)
-            .with_for_update(of=Transaction)
+            .with_for_update(of=Transaction, key_share=True)
             .execution_options(populate_existing=True)
         )
         return result.one_or_none()
@@ -80,7 +80,7 @@ class TransactionRepository:
         result = await self._session.scalars(
             select(Transaction)
             .where(Transaction.external_id == external_id)
-            .with_for_update()
+            .with_for_update(key_share=True)
             .execution_options(populate_existing=True)
         )
         return result.one_or_none()
