@@ -4,9 +4,10 @@ from uuid import UUID
 from fastapi import APIRouter, Query
 
 from payflow.api.deps import AdminUser, ReviewServiceDep, SessionDep
+from payflow.api.routes import API_PREFIX
 from payflow.api.schemas.reviews import RejectRequest, ReviewResponse
 
-router = APIRouter(prefix="/admin/reviews", tags=["admin"])
+router = APIRouter(prefix=f"{API_PREFIX}/admin/reviews", tags=["admin"])
 
 
 @router.get("")

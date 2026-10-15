@@ -7,6 +7,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from payflow.container import Container
+from payflow.core.metrics import RATE_LIMITED
 from payflow.core.security import RefreshTokenStore
 from payflow.db.models import User
 from payflow.domain.exceptions import (
@@ -138,4 +139,5 @@ AdminUser = Annotated[User, Depends(get_admin_user)]
 async def limit_transfer_rate(user: CurrentUser, container: ContainerDep) -> None:
     decision = await container.transfer_rate_limiter.hit(str(user.id))
     if not decision.allowed:
+        RATE_LIMITED.labels("transfers").inc()
         raise RateLimitExceededError(decision.retry_after_seconds)

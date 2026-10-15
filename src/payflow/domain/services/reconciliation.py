@@ -4,6 +4,7 @@ import structlog
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from payflow.core.clock import Clock
+from payflow.core.metrics import RECONCILIATION_FINISHED_AT, RECONCILIATION_ISSUES
 from payflow.db.models import ReconciliationReport
 from payflow.db.repositories.reconciliation import ReconciliationRepository
 from payflow.domain.enums import ReconciliationStatus
@@ -51,6 +52,8 @@ class ReconciliationService:
         )
         async with self._session_factory.begin() as session:
             ReconciliationRepository(session).add_report(report)
+        RECONCILIATION_ISSUES.set(len(issues))
+        RECONCILIATION_FINISHED_AT.set(report.finished_at.timestamp())
         log = logger.error if issues else logger.info
         log(
             "reconciliation.finished",

@@ -3,9 +3,10 @@ from typing import Annotated
 from fastapi import APIRouter, Query
 
 from payflow.api.deps import CurrentUser, NotificationServiceDep
+from payflow.api.routes import API_PREFIX
 from payflow.api.schemas.notifications import NotificationResponse
 
-router = APIRouter(tags=["notifications"])
+router = APIRouter(prefix=API_PREFIX, tags=["notifications"])
 
 
 @router.get("/notifications")

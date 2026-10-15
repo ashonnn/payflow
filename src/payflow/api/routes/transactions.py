@@ -5,13 +5,14 @@ from fastapi import APIRouter, Query
 
 from payflow.api.deps import CurrentUser, HistoryServiceDep
 from payflow.api.pagination import decode_cursor, encode_cursor
+from payflow.api.routes import API_PREFIX
 from payflow.api.schemas.transactions import (
     HistoryQuery,
     TransactionPage,
     TransactionResponse,
 )
 
-router = APIRouter(tags=["transactions"])
+router = APIRouter(prefix=API_PREFIX, tags=["transactions"])
 
 
 @router.get("/transactions")

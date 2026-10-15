@@ -1,6 +1,7 @@
 from fastapi import APIRouter, status
 
 from payflow.api.deps import AuthServiceDep, CurrentUser, SessionDep
+from payflow.api.routes import API_PREFIX
 from payflow.api.schemas.auth import (
     LoginRequest,
     RefreshRequest,
@@ -9,7 +10,7 @@ from payflow.api.schemas.auth import (
     UserResponse,
 )
 
-router = APIRouter(tags=["auth"])
+router = APIRouter(prefix=API_PREFIX, tags=["auth"])
 
 
 @router.post("/auth/register", status_code=status.HTTP_201_CREATED)

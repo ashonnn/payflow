@@ -7,6 +7,7 @@ import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from payflow.core.clock import Clock
+from payflow.core.metrics import FRAUD_SIGNALS, TRANSFERS
 from payflow.db.models import Account, Transaction, User
 from payflow.db.repositories.accounts import AccountRepository
 from payflow.db.repositories.outbox import OutboxRepository
@@ -128,6 +129,7 @@ class TransferService:
         )
         transaction.completed_at = completed_at
         self._outbox.publish(EventType.TRANSFER_COMPLETED, transaction)
+        TRANSFERS.labels(transaction.currency, transaction.status).inc()
         logger.info("transfer.completed", transaction_id=str(transaction.id))
 
     async def _hold_for_review(
@@ -144,6 +146,9 @@ class TransferService:
         transaction.status = TransactionStatus.PENDING_REVIEW
         transaction.review_reasons = [signal.value for signal in assessment.signals]
         self._outbox.publish(EventType.TRANSFER_HELD, transaction)
+        TRANSFERS.labels(transaction.currency, transaction.status).inc()
+        for signal in assessment.signals:
+            FRAUD_SIGNALS.labels(signal).inc()
         logger.warning(
             "transfer.held_for_review",
             transaction_id=str(transaction.id),

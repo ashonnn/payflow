@@ -8,6 +8,7 @@ import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from payflow.core.clock import Clock
+from payflow.core.metrics import EXCHANGES
 from payflow.db.models import Account, Transaction
 from payflow.db.repositories.accounts import AccountRepository
 from payflow.db.repositories.outbox import OutboxRepository
@@ -113,6 +114,7 @@ class ExchangeService:
             *move(accounts[target_pool.id], accounts[target_wallet.id], converted),
         )
         self._outbox.publish(EventType.EXCHANGE_COMPLETED, transaction)
+        EXCHANGES.labels(f"{source}/{target}").inc()
         logger.info(
             "exchange.completed",
             transaction_id=str(transaction.id),

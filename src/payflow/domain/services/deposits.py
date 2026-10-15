@@ -6,6 +6,7 @@ import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from payflow.core.clock import Clock
+from payflow.core.metrics import DEPOSITS
 from payflow.db.models import Transaction
 from payflow.db.repositories.accounts import AccountRepository
 from payflow.db.repositories.outbox import OutboxRepository
@@ -163,10 +164,12 @@ class DepositService:
         transaction.status = TransactionStatus.COMPLETED
         transaction.completed_at = self._clock()
         self._outbox.publish(EventType.DEPOSIT_COMPLETED, transaction)
+        DEPOSITS.labels(transaction.currency, transaction.status).inc()
         logger.info("deposit.completed", transaction_id=str(transaction.id))
 
     def _fail(self, transaction: Transaction, reason: str) -> None:
         transaction.status = TransactionStatus.FAILED
         transaction.failure_reason = reason
         self._outbox.publish(EventType.DEPOSIT_FAILED, transaction)
+        DEPOSITS.labels(transaction.currency, transaction.status).inc()
         logger.info("deposit.failed", transaction_id=str(transaction.id), reason=reason)

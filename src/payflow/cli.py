@@ -3,6 +3,8 @@ import asyncio
 from collections.abc import Callable, Coroutine, Sequence
 from typing import Any
 
+from prometheus_client import start_http_server
+
 from payflow.container import build_container
 from payflow.core.config import Settings, get_settings
 from payflow.core.logging import configure_logging
@@ -14,6 +16,7 @@ type Command = Callable[[Settings], Coroutine[Any, Any, int]]
 
 
 async def worker(settings: Settings) -> int:
+    start_http_server(settings.worker_metrics_port)
     container = build_container(settings)
     stop = asyncio.Event()
     stop_on_signals(stop)

@@ -2,10 +2,11 @@ from fastapi import APIRouter, Response, status
 
 from payflow.api.deps import CurrentUser, ExchangeServiceDep
 from payflow.api.idempotency import IdempotencyDep
+from payflow.api.routes import API_PREFIX
 from payflow.api.schemas.exchange import ExchangeRequest, QuoteResponse
 from payflow.api.schemas.transactions import TransactionResponse
 
-router = APIRouter(tags=["exchange"])
+router = APIRouter(prefix=API_PREFIX, tags=["exchange"])
 
 
 @router.get("/exchange/rates")

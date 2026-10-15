@@ -2,11 +2,12 @@ from fastapi import APIRouter, Depends, Response, status
 
 from payflow.api.deps import CurrentUser, TransferServiceDep, limit_transfer_rate
 from payflow.api.idempotency import IdempotencyDep
+from payflow.api.routes import API_PREFIX
 from payflow.api.schemas.transactions import TransactionResponse
 from payflow.api.schemas.transfers import TransferRequest
 from payflow.domain.services.transfers import TransferCommand
 
-router = APIRouter(tags=["transfers"])
+router = APIRouter(prefix=API_PREFIX, tags=["transfers"])
 
 
 @router.post(

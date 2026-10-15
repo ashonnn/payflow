@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Request
 
 from payflow.api.deps import ContainerDep, DepositServiceDep, SessionDep
+from payflow.api.routes import API_PREFIX
 from payflow.integrations.payment_provider import SIGNATURE_HEADER, parse_payment_event
 
-router = APIRouter(tags=["webhooks"])
+router = APIRouter(prefix=API_PREFIX, tags=["webhooks"])
 
 
 @router.post("/webhooks/payment-provider")

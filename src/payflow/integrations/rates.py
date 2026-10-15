@@ -9,6 +9,7 @@ from pydantic import BaseModel, ValidationError
 from redis.asyncio import Redis
 
 from payflow.core.clock import Clock
+from payflow.core.metrics import FX_RATE_CACHE
 from payflow.domain.enums import Currency
 from payflow.domain.exceptions import RatesUnavailableError
 from payflow.domain.ports import RateSnapshot, RatesProvider
@@ -57,11 +58,14 @@ class CachedRates:
 
     async def snapshot(self) -> RateSnapshot:
         if cached := await self._cached():
+            FX_RATE_CACHE.labels("hit").inc()
             return cached
         # one refresh per process; concurrent misses wait and reuse its result
         async with self._refresh:
             if cached := await self._cached():
+                FX_RATE_CACHE.labels("hit").inc()
                 return cached
+            FX_RATE_CACHE.labels("miss").inc()
             snapshot = RateSnapshot(await self._provider.usd_rates(), self._clock())
             await self._redis.set(CACHE_KEY, _encode(snapshot), px=self._ttl)
             return snapshot

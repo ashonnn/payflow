@@ -1,9 +1,10 @@
 from fastapi import APIRouter
 
 from payflow.api.deps import AccountServiceDep, CurrentUser
+from payflow.api.routes import API_PREFIX
 from payflow.api.schemas.accounts import AccountResponse
 
-router = APIRouter(tags=["accounts"])
+router = APIRouter(prefix=API_PREFIX, tags=["accounts"])
 
 
 @router.get("/accounts")

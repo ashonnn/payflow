@@ -6,6 +6,7 @@ from datetime import timedelta
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from payflow.core.metrics import OUTBOX_DELIVERIES
 from payflow.db.models import OutboxEvent
 from payflow.db.repositories.outbox import OutboxRepository
 from payflow.workers.scheduler import sleep_until_stopped
@@ -68,6 +69,8 @@ class OutboxRelay:
         except Exception as exc:
             retry_in = self._backoff(attempts)
             await outbox.mark_failed_attempt(event_id, repr(exc)[:1000], retry_in)
+            outcome = "retry" if retry_in else "dead_letter"
+            OUTBOX_DELIVERIES.labels(event_type, outcome).inc()
             logger.log(
                 logging.WARNING if retry_in else logging.ERROR,
                 "outbox.delivery_failed",
@@ -79,6 +82,7 @@ class OutboxRelay:
             )
         else:
             await outbox.mark_processed(event_id)
+            OUTBOX_DELIVERIES.labels(event_type, "delivered").inc()
             logger.info("outbox.delivered", event_id=event_id, event_type=event_type)
 
     def _backoff(self, attempts_so_far: int) -> timedelta | None:
