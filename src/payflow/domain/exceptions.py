@@ -65,6 +65,11 @@ class AccountNotFoundError(NotFoundError):
     default_message = "account not found"
 
 
+class InvalidCursorError(BadRequestError):
+    code = "invalid_cursor"
+    default_message = "pagination cursor is malformed"
+
+
 class TransactionNotFoundError(NotFoundError):
     code = "transaction_not_found"
     default_message = "transaction not found"
