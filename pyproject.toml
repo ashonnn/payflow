@@ -71,6 +71,12 @@ extend-select = [
 [tool.ruff.lint.isort]
 known-first-party = ["payflow", "mock_provider"]
 
+[tool.ruff.lint.pep8-naming]
+classmethod-decorators = [
+    "sqlalchemy.orm.declared_attr",
+    "sqlalchemy.orm.declared_attr.directive",
+]
+
 [tool.mypy]
 python_version = "3.14"
 strict = true
