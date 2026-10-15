@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     access_token_ttl_seconds: int = 15 * 60
     refresh_token_ttl_seconds: int = 7 * 24 * 60 * 60
 
+    password_hash_time_cost: int = 2
+    password_hash_memory_kib: int = 19 * 1024
+    password_hash_parallelism: int = 1
+
     admin_session_secret: SecretStr
 
     payment_provider_url: str

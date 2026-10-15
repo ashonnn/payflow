@@ -6,6 +6,9 @@ from pathlib import Path
 import pytest
 from alembic import command
 from alembic.config import Config
+from asgi_lifespan import LifespanManager
+from fastapi import FastAPI
+from httpx import ASGITransport, AsyncClient
 from pydantic import SecretStr
 from redis.asyncio import Redis
 from sqlalchemy import text
@@ -13,9 +16,11 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from testcontainers.community.postgres import PostgresContainer
 from testcontainers.community.redis import RedisContainer
 
+from payflow.container import Container, build_container
 from payflow.core.config import Settings
 from payflow.db.base import Base
 from payflow.db.session import build_engine, build_session_factory
+from payflow.main import create_app
 
 ALEMBIC_INI = Path(__file__).resolve().parents[2] / "alembic.ini"
 
@@ -51,6 +56,8 @@ def settings(database_url: str, redis_url: str) -> Settings:
         database_max_overflow=30,
         redis_url=redis_url,
         jwt_secret=SecretStr("test-jwt-secret-with-enough-entropy"),
+        password_hash_time_cost=1,
+        password_hash_memory_kib=1024,
         admin_session_secret=SecretStr("test-admin-session-secret"),
         payment_provider_url="http://mock-provider",
         payment_provider_api_key=SecretStr("test-provider-key"),
@@ -93,3 +100,23 @@ async def clean_state(engine: AsyncEngine, redis: Redis) -> None:
     async with engine.begin() as connection:
         await connection.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
     await redis.flushdb()
+
+
+@pytest.fixture
+async def app(settings: Settings, engine: AsyncEngine) -> AsyncIterator[FastAPI]:
+    app = create_app(build_container(settings))
+    async with LifespanManager(app):
+        yield app
+
+
+@pytest.fixture
+def container(app: FastAPI) -> Container:
+    container: Container = app.state.container
+    return container
+
+
+@pytest.fixture
+async def client(app: FastAPI) -> AsyncIterator[AsyncClient]:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+        yield client
