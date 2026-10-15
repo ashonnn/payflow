@@ -1,0 +1,123 @@
+name: payflow
+
+x-app: &app
+  image: payflow:local
+  build: .
+  init: true
+  restart: unless-stopped
+  environment: &app-environment
+    ENVIRONMENT: local
+    LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    LOG_JSON: "true"
+    DATABASE_URL: postgresql+asyncpg://payflow:${POSTGRES_PASSWORD:-payflow}@postgres:5432/payflow
+    REDIS_URL: redis://redis:6379/0
+    JWT_SECRET: ${JWT_SECRET:-local-only-jwt-secret-change-before-deploying}
+    ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:-local-only-admin-session-secret}
+    PAYMENT_PROVIDER_URL: http://mock-provider:8001
+    PAYMENT_PROVIDER_API_KEY: ${PAYMENT_PROVIDER_API_KEY:-local-provider-api-key}
+    PAYMENT_PROVIDER_WEBHOOK_SECRET: ${PAYMENT_PROVIDER_WEBHOOK_SECRET:-local-webhook-secret}
+    FX_PROVIDER_URL: http://mock-provider:8001
+    TRANSFER_RATE_LIMIT: ${TRANSFER_RATE_LIMIT:-10}
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: payflow
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-payflow}
+      POSTGRES_DB: payflow
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payflow -d payflow"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  migrate:
+    <<: *app
+    restart: "no"
+    command: ["sh", "-c", "alembic upgrade head && payflow seed"]
+    environment:
+      <<: *app-environment
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-admin-demo-pass}
+      SEED_USER_PASSWORD: ${SEED_USER_PASSWORD:-demo-pass-123}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  api:
+    <<: *app
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  worker:
+    <<: *app
+    command: ["payflow", "worker"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9100/metrics')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  mock-provider:
+    <<: *app
+    command: ["uvicorn", "mock_provider.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8001", "--no-access-log"]
+    environment:
+      MOCK_PROVIDER_API_KEY: ${PAYMENT_PROVIDER_API_KEY:-local-provider-api-key}
+      MOCK_PROVIDER_WEBHOOK_SECRET: ${PAYMENT_PROVIDER_WEBHOOK_SECRET:-local-webhook-secret}
+      MOCK_PROVIDER_WEBHOOK_URL: http://api:8000/api/v1/webhooks/payment-provider
+      MOCK_PROVIDER_CAPTURE_DELAY_SECONDS: ${MOCK_PROVIDER_CAPTURE_DELAY_SECONDS:-2}
+    ports:
+      - "${MOCK_PROVIDER_PORT:-8001}:8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  locust:
+    image: locustio/locust:2.46.6
+    profiles: ["loadtest"]
+    command: ["-f", "/mnt/locust/locustfile.py", "--host", "http://api:8000"]
+    ports:
+      - "${LOCUST_PORT:-8089}:8089"
+    volumes:
+      - ./loadtest:/mnt/locust:ro
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  redis-data:
