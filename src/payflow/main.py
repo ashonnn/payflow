@@ -4,6 +4,7 @@ from importlib.metadata import version
 
 from fastapi import FastAPI
 
+from payflow.api.admin import mount_admin
 from payflow.api.errors import register_error_handlers
 from payflow.api.middleware import RequestContextMiddleware
 from payflow.api.router import api_router
@@ -29,4 +30,10 @@ def create_app(container: Container | None = None) -> FastAPI:
     register_error_handlers(app)
     app.include_router(api_router)
     app.include_router(health.router)
+    mount_admin(
+        app,
+        container.session_factory,
+        container.password_hasher,
+        settings.admin_session_secret.get_secret_value(),
+    )
     return app
