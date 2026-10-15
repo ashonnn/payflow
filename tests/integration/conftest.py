@@ -1,6 +1,7 @@
 import asyncio
 import os
 from collections.abc import AsyncIterator, Iterator
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
@@ -17,11 +18,13 @@ from testcontainers.community.postgres import PostgresContainer
 from testcontainers.community.redis import RedisContainer
 
 from payflow.container import Container, build_container
+from payflow.core.clock import utc_now
 from payflow.core.config import Settings
 from payflow.db.base import Base
 from payflow.db.session import build_engine, build_session_factory
+from payflow.integrations.rates import CachedRates
 from payflow.main import create_app
-from tests.integration.fakes import FakePaymentProvider
+from tests.integration.fakes import FakePaymentProvider, FakeRatesProvider
 from tests.integration.helpers import DAYTIME
 
 ALEMBIC_INI = Path(__file__).resolve().parents[2] / "alembic.ini"
@@ -123,6 +126,15 @@ def container(app: FastAPI) -> Container:
 def payment_provider(container: Container) -> FakePaymentProvider:
     provider = FakePaymentProvider()
     container.payment_provider = provider
+    return provider
+
+
+@pytest.fixture
+def rates_provider(container: Container) -> FakeRatesProvider:
+    provider = FakeRatesProvider()
+    container.exchange_rates = CachedRates(
+        container.redis, provider, timedelta(minutes=1), utc_now
+    )
     return provider
 
 

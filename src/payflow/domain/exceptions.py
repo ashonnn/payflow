@@ -137,3 +137,18 @@ class UnknownPaymentError(NotFoundError):
 class PaymentProviderUnavailableError(ServiceUnavailableError):
     code = "payment_provider_unavailable"
     default_message = "the payment provider is unavailable, retry later"
+
+
+class RatesUnavailableError(ServiceUnavailableError):
+    code = "rates_unavailable"
+    default_message = "exchange rates are unavailable, retry later"
+
+
+class SameCurrencyExchangeError(BusinessRuleError):
+    code = "same_currency"
+    default_message = "source and target currency must differ"
+
+
+class ExchangeAmountTooSmallError(BusinessRuleError):
+    code = "amount_too_small"
+    default_message = "amount is too small to convert"

@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     webhook_tolerance_seconds: int = 300
 
     fx_provider_url: str
+    fx_provider_timeout_seconds: float = 3.0
     fx_rates_ttl_seconds: int = 60
     fx_spread: Decimal = Decimal("0.005")
 

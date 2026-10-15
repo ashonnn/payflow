@@ -17,6 +17,7 @@ from payflow.domain.exceptions import (
 from payflow.domain.services.accounts import AccountService
 from payflow.domain.services.auth import AuthService
 from payflow.domain.services.deposits import DepositService
+from payflow.domain.services.exchange import ExchangeService
 from payflow.domain.services.history import HistoryService
 from payflow.domain.services.reviews import ReviewService
 from payflow.domain.services.transfers import TransferService
@@ -95,6 +96,17 @@ def get_transfer_service(
 
 
 TransferServiceDep = Annotated[TransferService, Depends(get_transfer_service)]
+
+
+def get_exchange_service(
+    session: SessionDep, container: ContainerDep
+) -> ExchangeService:
+    return ExchangeService(
+        session, container.exchange_rates, container.settings.fx_spread, container.clock
+    )
+
+
+ExchangeServiceDep = Annotated[ExchangeService, Depends(get_exchange_service)]
 
 
 def get_review_service(session: SessionDep, container: ContainerDep) -> ReviewService:
