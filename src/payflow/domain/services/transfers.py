@@ -47,7 +47,7 @@ class TransferCommand:
 
 
 class TransferService:
-    """Moves money between wallets; risky transfers are parked on a review hold."""
+    """Moves money between wallets and holds flagged transfers for review."""
 
     def __init__(
         self, session: AsyncSession, policy: FraudPolicy, clock: Clock

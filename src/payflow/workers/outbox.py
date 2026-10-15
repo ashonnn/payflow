@@ -17,7 +17,7 @@ type EventHandler = Callable[[AsyncSession, OutboxEvent], Awaitable[None]]
 
 
 class OutboxRelay:
-    """Hands committed outbox events to a handler, at least once, with backoff."""
+    """Delivers committed outbox events to a handler at least once, with backoff."""
 
     def __init__(
         self,

@@ -16,7 +16,8 @@ async def advisory_lock(engine: AsyncEngine, name: str) -> AsyncIterator[bool]:
                 text("SELECT pg_try_advisory_lock(:key)"), {"key": key}
             )
         )
-        # session-level lock: it outlives this commit, the connection stays idle
+        # the lock is session-level, so it survives this commit and the connection
+        # does not sit idle in a transaction while the job runs
         await connection.commit()
         try:
             yield acquired

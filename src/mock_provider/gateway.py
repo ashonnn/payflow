@@ -60,7 +60,7 @@ def payment_event(payment: Payment) -> dict[str, Any]:
 
 
 def usd_kzt_rate(settings: ProviderSettings, at: float) -> Decimal:
-    """Base rate with a slow sine-wave drift, so cached quotes visibly age."""
+    """Base rate with a slow sine-wave drift, so successive fetches differ."""
     swing = Decimal(math.sin(2 * math.pi * at / settings.rate_period_seconds))
     rate = settings.usd_kzt_rate * (1 + settings.rate_swing * swing)
     return rate.quantize(Decimal("0.0001"))
@@ -97,7 +97,7 @@ class Gateway:
         return payment
 
     async def deliver(self, event: dict[str, Any]) -> bool:
-        """POST a signed event, retrying with exponential backoff until accepted."""
+        """POST a signed event with exponential backoff; False if every attempt failed."""
         body = json.dumps(event).encode()
         secret = self._settings.webhook_secret.get_secret_value()
         attempts = self._settings.webhook_max_attempts

@@ -5,7 +5,7 @@ from datetime import timedelta
 
 from redis.asyncio import Redis
 
-# sliding window log; redis TIME keeps every api replica on the same clock
+# the script reads redis TIME so every api replica uses the same clock
 SLIDING_WINDOW = """
 local window = tonumber(ARGV[1])
 local limit = tonumber(ARGV[2])

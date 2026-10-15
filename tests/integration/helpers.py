@@ -1,10 +1,11 @@
 import json
 import time
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from decimal import Decimal
 from typing import Any
 from uuid import UUID, uuid4
+from zoneinfo import ZoneInfo
 
 from httpx import AsyncClient, Response
 from sqlalchemy import update
@@ -19,10 +20,9 @@ from tests.integration.fakes import FakePaymentProvider
 
 DEFAULT_PASSWORD = "correct-horse-battery"
 WEBHOOK_PATH = "/api/v1/webhooks/payment-provider"
-# noon in Almaty, clear of the night-time fraud window
-DAYTIME = datetime(2026, 10, 15, 7, 0, tzinfo=UTC)
-# 02:30 in Almaty
-NIGHT = datetime(2026, 10, 14, 21, 30, tzinfo=UTC)
+ALMATY = ZoneInfo("Asia/Almaty")
+DAYTIME = datetime(2026, 10, 15, 12, 0, tzinfo=ALMATY)
+NIGHT = datetime(2026, 10, 15, 2, 30, tzinfo=ALMATY)
 
 Sessions = async_sessionmaker[AsyncSession]
 

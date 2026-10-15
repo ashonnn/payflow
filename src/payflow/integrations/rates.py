@@ -45,7 +45,7 @@ class HttpRatesProvider:
 
 
 class CachedRates:
-    """Rates shared through Redis, so the provider is asked at most once per TTL."""
+    """Exchange rates cached in Redis and shared by every API process."""
 
     def __init__(
         self, redis: Redis, provider: RatesProvider, ttl: timedelta, clock: Clock
@@ -54,14 +54,13 @@ class CachedRates:
         self._provider = provider
         self._ttl = ttl
         self._clock = clock
-        self._refresh = asyncio.Lock()
+        self._refresh_lock = asyncio.Lock()
 
     async def snapshot(self) -> RateSnapshot:
         if cached := await self._cached():
             FX_RATE_CACHE.labels("hit").inc()
             return cached
-        # one refresh per process; concurrent misses wait and reuse its result
-        async with self._refresh:
+        async with self._refresh_lock:
             if cached := await self._cached():
                 FX_RATE_CACHE.labels("hit").inc()
                 return cached

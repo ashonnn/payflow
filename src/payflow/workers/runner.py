@@ -32,7 +32,6 @@ def build_relay(container: Container) -> OutboxRelay:
 
 
 async def run_worker(container: Container, stop: asyncio.Event) -> None:
-    """Run the outbox relay and the scheduled jobs until `stop` is set."""
     settings = container.settings
     async with asyncio.TaskGroup() as tasks:
         tasks.create_task(build_relay(container).run(stop))

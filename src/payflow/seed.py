@@ -96,7 +96,7 @@ async def seed(container: Container, settings: SeedSettings) -> bool:
                     external_id=f"seed-{customer.phone}-{currency}",
                 )
 
-        # seeded history should not depend on the hour it happens to be generated at
+        # seeded history should not depend on the time of day it is generated
         policy = replace(
             container.fraud_policy,
             weights={**container.fraud_policy.weights, FraudSignal.NIGHT_TIME: 0},

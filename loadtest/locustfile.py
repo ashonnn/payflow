@@ -1,12 +1,12 @@
 import random
 import uuid
+from http import HTTPStatus
 
 from locust import HttpUser, between, task
 
 PASSWORD = "load-test-password"
-# recipients created by `payflow seed`
 SEEDED_PHONES = ("+77010000001", "+77010000002", "+77010000003")
-EXPECTED_REJECTIONS = {409, 429}
+EXPECTED_REJECTIONS = {HTTPStatus.CONFLICT, HTTPStatus.TOO_MANY_REQUESTS}
 
 
 class WalletUser(HttpUser):
@@ -61,7 +61,6 @@ class WalletUser(HttpUser):
         )
 
     def _post_expecting_rejections(self, path: str, payload: dict[str, str]) -> None:
-        # insufficient funds and rate limiting are correct answers under load
         with self.client.post(
             path, json=payload, headers=self._idempotency_key(), catch_response=True
         ) as response:

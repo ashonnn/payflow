@@ -40,5 +40,5 @@ def configure_logging(level: str, *, json: bool) -> None:
     for name in ("uvicorn", "uvicorn.error"):
         logging.getLogger(name).handlers.clear()
         logging.getLogger(name).propagate = True
-    # request logs come from our own middleware with route and request id attached
+    # our middleware logs each request with its route and request id
     logging.getLogger("uvicorn.access").disabled = True

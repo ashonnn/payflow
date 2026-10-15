@@ -18,7 +18,6 @@ class Posting:
 def move(
     source: Account, destination: Account, amount: Decimal
 ) -> tuple[Posting, Posting]:
-    """Postings that take `amount` from source and give it to destination."""
     if source.currency != destination.currency:
         raise ValueError("a move cannot change currency")
     if amount <= 0:

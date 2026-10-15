@@ -43,7 +43,7 @@ class OutboxRepository:
     async def mark_failed_attempt(
         self, event_id: int, error: str, retry_in: timedelta | None
     ) -> None:
-        """Count a failed delivery; without `retry_in` the event is given up on."""
+        """Count a failed delivery; without `retry_in` the event is marked failed."""
         values = (
             {"available_at": func.now() + retry_in}
             if retry_in is not None

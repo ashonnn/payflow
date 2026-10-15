@@ -23,7 +23,7 @@ def mask_phone(phone: str) -> str:
 
 
 class NotificationService:
-    """Turns ledger events into messages for the people involved."""
+    """Builds user notifications from outbox events."""
 
     def __init__(self, session: AsyncSession) -> None:
         self._users = UserRepository(session)

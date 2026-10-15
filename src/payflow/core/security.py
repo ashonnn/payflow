@@ -95,7 +95,7 @@ class TokenCodec:
 
 
 class RefreshTokenStore:
-    """Allowlist of live refresh tokens; consuming one is atomic, so it rotates once."""
+    """Allowlist of live refresh tokens; GETDEL makes each one usable once."""
 
     def __init__(self, redis: Redis) -> None:
         self._redis = redis
