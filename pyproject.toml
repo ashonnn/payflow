@@ -23,6 +23,9 @@ dependencies = [
     "uvicorn[standard]>=0.54",
 ]
 
+[project.scripts]
+payflow = "payflow.cli:main"
+
 [dependency-groups]
 dev = [
     "asgi-lifespan>=2.1",

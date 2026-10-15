@@ -1,7 +1,8 @@
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -45,3 +46,10 @@ class IdempotencyRepository:
             .where(IdempotencyKey.user_id == user_id, IdempotencyKey.key == key)
             .values(response_status=status_code, response_body=body)
         )
+
+    async def purge_created_before(self, cutoff: datetime) -> int:
+        connection = await self._session.connection()
+        result = await connection.execute(
+            delete(IdempotencyKey).where(IdempotencyKey.created_at < cutoff)
+        )
+        return result.rowcount
