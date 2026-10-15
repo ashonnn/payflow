@@ -23,6 +23,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from payflow.db.base import Base, str_enum
 from payflow.domain.enums import (
     Currency,
+    Direction,
     EventType,
     OutboxStatus,
     ReconciliationStatus,
@@ -125,6 +126,24 @@ class Transaction(Base):
 
     def __str__(self) -> str:
         return f"{self.type} {self.amount} {self.currency} ({self.status})"
+
+    def direction_for(self, viewer_id: UUID) -> Direction:
+        match self.type:
+            case TransactionType.DEPOSIT:
+                return Direction.INCOMING
+            case TransactionType.EXCHANGE:
+                return Direction.INTERNAL
+            case TransactionType.TRANSFER if self.initiator_id == viewer_id:
+                return Direction.OUTGOING
+            case TransactionType.TRANSFER:
+                return Direction.INCOMING
+
+    def counterparty_phone_for(self, viewer_id: UUID) -> str | None:
+        """Phone of the other side of a transfer; relationships must be loaded."""
+        if self.type is not TransactionType.TRANSFER:
+            return None
+        other = self.counterparty if self.initiator_id == viewer_id else self.initiator
+        return other.phone if other is not None else None
 
 
 class LedgerEntry(Base):

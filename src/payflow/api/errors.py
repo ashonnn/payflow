@@ -8,19 +8,23 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from payflow.domain.exceptions import (
     AuthenticationError,
+    BadRequestError,
     BusinessRuleError,
     ConflictError,
     DomainError,
     NotFoundError,
     PermissionDeniedError,
+    ServiceUnavailableError,
 )
 
 STATUS_BY_ERROR: dict[type[DomainError], int] = {
+    BadRequestError: status.HTTP_400_BAD_REQUEST,
     NotFoundError: status.HTTP_404_NOT_FOUND,
     ConflictError: status.HTTP_409_CONFLICT,
     BusinessRuleError: status.HTTP_422_UNPROCESSABLE_CONTENT,
     AuthenticationError: status.HTTP_401_UNAUTHORIZED,
     PermissionDeniedError: status.HTTP_403_FORBIDDEN,
+    ServiceUnavailableError: status.HTTP_503_SERVICE_UNAVAILABLE,
 }
 
 

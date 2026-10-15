@@ -21,6 +21,7 @@ from payflow.core.config import Settings
 from payflow.db.base import Base
 from payflow.db.session import build_engine, build_session_factory
 from payflow.main import create_app
+from tests.integration.fakes import FakePaymentProvider
 
 ALEMBIC_INI = Path(__file__).resolve().parents[2] / "alembic.ini"
 
@@ -113,6 +114,18 @@ async def app(settings: Settings, engine: AsyncEngine) -> AsyncIterator[FastAPI]
 def container(app: FastAPI) -> Container:
     container: Container = app.state.container
     return container
+
+
+@pytest.fixture
+def payment_provider(container: Container) -> FakePaymentProvider:
+    provider = FakePaymentProvider()
+    container.payment_provider = provider
+    return provider
+
+
+@pytest.fixture
+def webhook_secret(settings: Settings) -> str:
+    return settings.payment_provider_webhook_secret.get_secret_value()
 
 
 @pytest.fixture

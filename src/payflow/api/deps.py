@@ -12,6 +12,8 @@ from payflow.db.models import User
 from payflow.domain.exceptions import InvalidTokenError
 from payflow.domain.services.accounts import AccountService
 from payflow.domain.services.auth import AuthService
+from payflow.domain.services.deposits import DepositService
+from payflow.domain.services.history import HistoryService
 
 
 def get_container(request: Request) -> Container:
@@ -64,3 +66,17 @@ def get_account_service(session: SessionDep) -> AccountService:
 
 
 AccountServiceDep = Annotated[AccountService, Depends(get_account_service)]
+
+
+def get_deposit_service(session: SessionDep, container: ContainerDep) -> DepositService:
+    return DepositService(session, container.payment_provider, container.clock)
+
+
+DepositServiceDep = Annotated[DepositService, Depends(get_deposit_service)]
+
+
+def get_history_service(session: SessionDep) -> HistoryService:
+    return HistoryService(session)
+
+
+HistoryServiceDep = Annotated[HistoryService, Depends(get_history_service)]

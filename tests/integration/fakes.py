@@ -1,0 +1,35 @@
+import hashlib
+from dataclasses import dataclass, field
+from decimal import Decimal
+
+from payflow.domain.enums import Currency
+from payflow.domain.exceptions import PaymentProviderUnavailableError
+from payflow.domain.ports import PaymentStatus, ProviderPayment
+
+
+@dataclass(frozen=True, slots=True)
+class PaymentCall:
+    reference: str
+    amount: Decimal
+    currency: Currency
+    idempotency_key: str
+
+
+@dataclass(slots=True)
+class FakePaymentProvider:
+    calls: list[PaymentCall] = field(default_factory=list)
+    available: bool = True
+
+    async def create_payment(
+        self,
+        *,
+        reference: str,
+        amount: Decimal,
+        currency: Currency,
+        idempotency_key: str,
+    ) -> ProviderPayment:
+        if not self.available:
+            raise PaymentProviderUnavailableError
+        self.calls.append(PaymentCall(reference, amount, currency, idempotency_key))
+        payment_id = "pay_" + hashlib.sha256(idempotency_key.encode()).hexdigest()[:16]
+        return ProviderPayment(id=payment_id, status=PaymentStatus.PENDING)

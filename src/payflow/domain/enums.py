@@ -20,6 +20,12 @@ class TransactionStatus(StrEnum):
     REJECTED = "rejected"
 
 
+class Direction(StrEnum):
+    INCOMING = "incoming"
+    OUTGOING = "outgoing"
+    INTERNAL = "internal"
+
+
 class SystemAccount(StrEnum):
     PROVIDER_CLEARING = "provider_clearing"
     FX_POOL = "fx_pool"
