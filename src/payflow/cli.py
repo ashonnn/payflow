@@ -9,6 +9,7 @@ from payflow.container import build_container
 from payflow.core.config import Settings, get_settings
 from payflow.core.logging import configure_logging
 from payflow.domain.enums import ReconciliationStatus
+from payflow.seed import SeedSettings, seed
 from payflow.workers.jobs import reconcile
 from payflow.workers.runner import run_worker, stop_on_signals
 
@@ -39,6 +40,15 @@ async def reconcile_once(settings: Settings) -> int:
     return 1
 
 
+async def seed_demo_data(settings: Settings) -> int:
+    container = build_container(settings)
+    try:
+        await seed(container, SeedSettings())
+    finally:
+        await container.aclose()
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="payflow")
     commands = parser.add_subparsers(required=True)
@@ -48,6 +58,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     commands.add_parser(
         "reconcile", help="check every balance against the ledger once"
     ).set_defaults(command=reconcile_once)
+    commands.add_parser(
+        "seed", help="create demo users, balances and history once"
+    ).set_defaults(command=seed_demo_data)
     args = parser.parse_args(argv)
 
     settings = get_settings()
