@@ -19,6 +19,7 @@ from payflow.domain.services.auth import AuthService
 from payflow.domain.services.deposits import DepositService
 from payflow.domain.services.exchange import ExchangeService
 from payflow.domain.services.history import HistoryService
+from payflow.domain.services.notifications import NotificationService
 from payflow.domain.services.reviews import ReviewService
 from payflow.domain.services.transfers import TransferService
 
@@ -87,6 +88,15 @@ def get_history_service(session: SessionDep) -> HistoryService:
 
 
 HistoryServiceDep = Annotated[HistoryService, Depends(get_history_service)]
+
+
+def get_notification_service(session: SessionDep) -> NotificationService:
+    return NotificationService(session)
+
+
+NotificationServiceDep = Annotated[
+    NotificationService, Depends(get_notification_service)
+]
 
 
 def get_transfer_service(

@@ -5,6 +5,7 @@ from payflow.api.routes import (
     auth,
     deposits,
     exchange,
+    notifications,
     reviews,
     transactions,
     transfers,
@@ -18,5 +19,6 @@ api_router.include_router(deposits.router)
 api_router.include_router(transfers.router)
 api_router.include_router(exchange.router)
 api_router.include_router(transactions.router)
+api_router.include_router(notifications.router)
 api_router.include_router(reviews.router)
 api_router.include_router(webhooks.router)
