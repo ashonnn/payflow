@@ -7,6 +7,10 @@ class DomainError(Exception):
         super().__init__(self.message)
 
 
+class BadRequestError(DomainError):
+    code = "bad_request"
+
+
 class NotFoundError(DomainError):
     code = "not_found"
     default_message = "resource not found"
@@ -31,6 +35,11 @@ class PermissionDeniedError(DomainError):
     default_message = "you are not allowed to perform this action"
 
 
+class ServiceUnavailableError(DomainError):
+    code = "service_unavailable"
+    default_message = "a dependency is temporarily unavailable"
+
+
 class PhoneAlreadyRegisteredError(ConflictError):
     code = "phone_already_registered"
     default_message = "this phone number is already registered"
@@ -49,3 +58,53 @@ class InvalidTokenError(AuthenticationError):
 class InactiveUserError(PermissionDeniedError):
     code = "user_inactive"
     default_message = "this account is deactivated"
+
+
+class AccountNotFoundError(NotFoundError):
+    code = "account_not_found"
+    default_message = "account not found"
+
+
+class TransactionNotFoundError(NotFoundError):
+    code = "transaction_not_found"
+    default_message = "transaction not found"
+
+
+class InsufficientFundsError(ConflictError):
+    code = "insufficient_funds"
+    default_message = "insufficient funds"
+
+
+class IdempotencyKeyRequiredError(BadRequestError):
+    code = "idempotency_key_required"
+    default_message = "this endpoint requires an Idempotency-Key header"
+
+
+class IdempotencyKeyReusedError(BusinessRuleError):
+    code = "idempotency_key_reused"
+    default_message = "this Idempotency-Key was already used with a different request"
+
+
+class IdempotencyKeyInProgressError(ConflictError):
+    code = "idempotency_key_in_progress"
+    default_message = "a request with this Idempotency-Key is still being processed"
+
+
+class InvalidWebhookSignatureError(BadRequestError):
+    code = "invalid_signature"
+    default_message = "webhook signature is missing or invalid"
+
+
+class InvalidWebhookPayloadError(BadRequestError):
+    code = "invalid_payload"
+    default_message = "webhook payload is malformed"
+
+
+class UnknownPaymentError(NotFoundError):
+    code = "unknown_payment"
+    default_message = "no deposit matches this payment"
+
+
+class PaymentProviderUnavailableError(ServiceUnavailableError):
+    code = "payment_provider_unavailable"
+    default_message = "the payment provider is unavailable, retry later"
