@@ -26,7 +26,7 @@ from payflow.domain.exceptions import (
     SameCurrencyExchangeError,
 )
 from payflow.domain.ledger import move
-from payflow.domain.money import apply_spread, convert
+from payflow.domain.money import RATE_STEP, apply_spread, convert
 from payflow.domain.ports import ExchangeRates
 from payflow.domain.services.ledger import Ledger
 
@@ -129,7 +129,7 @@ class ExchangeService:
         return Quote(
             source=source,
             target=target,
-            mid_rate=mid_rate,
+            mid_rate=mid_rate.quantize(RATE_STEP),
             rate=apply_spread(mid_rate, self._spread),
             as_of=as_of,
         )

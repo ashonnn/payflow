@@ -51,9 +51,9 @@ async def test_rates_include_spread_for_both_directions(
     response = await client.get("/api/v1/exchange/rates")
 
     quotes = {(q["source"], q["target"]): q for q in response.json()}
-    assert quotes["USD", "KZT"]["mid_rate"] == "500.00"
+    assert quotes["USD", "KZT"]["mid_rate"] == "500.00000000"
     assert quotes["USD", "KZT"]["rate"] == "497.50000000"
-    assert Decimal(quotes["KZT", "USD"]["mid_rate"]) == Decimal("0.002")
+    assert quotes["KZT", "USD"]["mid_rate"] == "0.00200000"
     assert quotes["KZT", "USD"]["rate"] == "0.00199000"
 
 
